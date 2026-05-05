@@ -7,13 +7,16 @@ export class Game extends Phaser.Scene
     private bombs: Phaser.Physics.Arcade.Group;
     private platforms: Phaser.Physics.Arcade.Group;
     private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
+    private scoreText: Phaser.GameObjects.Text;
+    private gameOverText: Phaser.GameObjects.Text;
     private score = 0;
     private gameOver = false;
-    private scoreText: Phaser.GameObjects.Text;
     private canDoubleJump = true;
     private canDash= true;
     private platformVelocity = 0;
     private isDropping = false;
+    private gameStarted = false;
+    private startScreen: Phaser.GameObjects.Container;
 
     constructor ()
     {
@@ -85,8 +88,8 @@ export class Game extends Phaser.Scene
 
         this.stars = this.physics.add.group({
             key: 'star',
-            repeat: 10,
-            setXY: { x: 12, y: 0, stepX: 100 }
+            repeat: 9,
+            setXY: { x: 25, y: 0, stepX: 100 }
         });
 
         this.stars.getChildren().forEach(function (child) {
@@ -121,11 +124,64 @@ export class Game extends Phaser.Scene
 
         this.physics.add.overlap(this.player, this.stars, this.collectStar, undefined, this);
         this.physics.add.collider(this.player, this.bombs, this.hitBomb, undefined, this);
+
+        this.gameOverText = this.add.text(512, 384, 'GAME OVER\nAppuyez sur ESPACE pour rejouer', {
+            fontSize: '42px',
+            color: '#ff0000',
+            align: 'center',
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 6
+        });
+        this.gameOverText.setOrigin(0.5).setDepth(1000).setVisible(false);
+
+        this.physics.pause();
+
+        this.startScreen = this.add.container(512, 384);
+
+        const bg = this.add.rectangle(0, 0, 800, 500, 0x000000, 0.8);
+
+        const instructions = this.add.text(0, 0,
+            'COMMANDES DU JEU\n\n' +
+            '← → : Se déplacer\n' +
+            '↑ : Sauter (Double saut possible)\n' +
+            '↓ : Chute rapide\n' +
+            '↓ + ESPACE : Descendre d\'une plateforme\n' +
+            'GAUCHE/DROITE + ESPACE : Dash\n\n' +
+            'Appuyez sur ESPACE pour commencer !',
+            {
+                fontSize: '24px',
+                color: '#ffffff',
+                align: 'center',
+                lineSpacing: 10
+            }
+        ).setOrigin(0.5);
+
+// On met tout dans le conteneur
+        this.startScreen.add([bg, instructions]);
+        this.startScreen.setDepth(2000); // Au dessus de tout
     }
 
     update ()
     {
+        const spaceJustDown = Phaser.Input.Keyboard.JustDown(this.cursors.space);
+
+        if (!this.gameStarted) {
+            if (spaceJustDown) {
+                this.gameStarted = true;
+                this.startScreen.setVisible(false);
+                this.physics.resume();
+            }
+            return;
+        }
+
         if (this.gameOver) {
+            if (spaceJustDown) {
+                this.gameOver = false;
+                this.gameStarted = false;
+                this.score = 0;
+                this.scene.restart();
+            }
             return;
         }
 
@@ -153,14 +209,12 @@ export class Game extends Phaser.Scene
             this.player.setVelocityY(700);
         }
 
-        let spaceJustDown = Phaser.Input.Keyboard.JustDown(this.cursors.space);
-
-        if (spaceJustDown && this.cursors.left.isDown && this.canDash) {
+        if (spaceJustDown && this.cursors.left.isDown && this.canDash && this.gameStarted) {
             this.player.setVelocityX(-3000);
             this.canDash = false;
         }
 
-        if (spaceJustDown && this.cursors.right.isDown && this.canDash) {
+        if (spaceJustDown && this.cursors.right.isDown && this.canDash && this.gameStarted) {
             this.player.setVelocityX(3000);
             this.canDash = false;
         }
@@ -227,5 +281,6 @@ export class Game extends Phaser.Scene
         this.player.anims.play('turn');
 
         this.gameOver = true;
+        this.gameOverText.setVisible(true);
     }
 }
