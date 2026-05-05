@@ -23,8 +23,7 @@ export class Game extends Phaser.Scene
     preload ()
     {
         this.load.setPath('assets');
-
-        this.load.image('sky', 'bg.png');
+        this.load.image('background', 'bg.png');
         this.load.image('ground', 'green-platform.png');
         this.load.image('moving-ground', 'ice-platform.png');
         this.load.image('star', 'star.png');
@@ -34,7 +33,7 @@ export class Game extends Phaser.Scene
 
     create ()
     {
-        this.add.image(0, 0, 'sky').setOrigin( 0 ).setDisplaySize( 1024, 768 );
+        this.add.image(0, 0, 'background').setOrigin(0).setDisplaySize(1024, 768);
 
         this.platforms = this.physics.add.group();
 
